@@ -1,0 +1,41 @@
+# Verifica que la app y el backend compilen en cada push a main y en cada
+# Pull Request, antes de unirlo. No despliega nada: Render sigue desplegando
+# por su cuenta.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  app:
+    name: App (Expo) - tipos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+
+  backend:
+    name: Backend - tipos y build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+      # prisma generate + tsc: falla si el esquema o el código no cuadran.
+      - run: npm run build
